@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}Order {{ order.order_number }} - XML Cafe System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-receipt"></i> Order {{ order.order_number }}
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> Order Details
+            </div>
+            <div class="card-body">
+                <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.status|title }}
+                    </span>
+                </p>
+                <p><strong>Created:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                {% if order.notes %}
+                <p><strong>Notes:</strong> {{ order.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list"></i> Order Items
+            </div>
+            <div class="card-body">
+                {% if order.items.all %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                        <tr>
+                            <td>{{ item.menu_item.name }}</td>
+                            <td>Rs. {{ item.price_at_order|floatformat:2 }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>Rs. {{ item.line_total|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'order_remove_item' order.pk item.pk %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No items in this order yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-calculator"></i> Add Item
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ item_form.menu_item.label_tag }}
+                            {{ item_form.menu_item }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ item_form.quantity.label_tag }}
+                            {{ item_form.quantity }}
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary mt-4">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-wallet"></i> Order Summary
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>Rs. {{ order.subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Discount:</span>
+                    <span class="text-success">-Rs. {{ order.discount|floatformat:2 }}</span>
+                </div>
+                {% if order.coupon_code %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Coupon:</span>
+                    <span class="panel-badge">{{ order.coupon_code }}</span>
+                </div>
+                {% endif %}
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Total:</strong>
+                    <strong class="text-primary">Rs. {{ order.total|floatformat:2 }}</strong>
+                </div>
+                <div class="payment-status-line mt-3">
+                    <span class="status-badge payment-{{ order.payment_status }}">{{ order.get_payment_status_display }}</span>
+                    <span>{{ order.get_payment_method_display }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-ticket"></i> Coupon Code
+            </div>
+            <div class="card-body">
+                {% if order.coupon_code %}
+                <p class="mb-3">Applied coupon <strong>{{ order.coupon_code }}</strong>.</p>
+                <form method="post" action="{% url 'order_remove_coupon' order.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-times"></i> Remove Coupon
+                    </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'order_apply_coupon' order.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        {{ coupon_form.code.label_tag }}
+                        {{ coupon_form.code }}
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-check"></i> Apply Coupon
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-credit-card"></i> Payment
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'order_select_payment' order.pk %}">
+                    {% csrf_token %}
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="cash" {% if order.payment_method == 'cash' or order.payment_method == 'unpaid' %}checked{% endif %}>
+                            <span><i class="fas fa-money-bill-wave"></i> Cash</span>
+                        </label>
+                        <label class="payment-option esewa-option">
+                            <input type="radio" name="payment_method" value="esewa" {% if order.payment_method == 'esewa' %}checked{% endif %}>
+                            <span><strong class="esewa-logo">eSewa</strong> Pay</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-3">
+                        <i class="fas fa-lock"></i> Continue Payment
+                    </button>
+                </form>
+                {% if order.esewa_reference %}
+                <p class="text-muted small mt-3 mb-0">eSewa Ref: {{ order.esewa_reference }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cog"></i> Actions
+            </div>
+            <div class="card-body">
+                {% if order.status == 'pending' %}
+                <form method="post" action="{% url 'order_verify' order.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-check"></i> Verify Order
+                    </button>
+                </form>
+                {% endif %}
+
+                <form method="post" action="{% url 'order_update_status' order.pk %}" class="mb-3">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label class="form-label">Update Status:</label>
+                        <select name="status" class="form-select">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                            <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sync"></i> Update Status
+                    </button>
+                </form>
+
+                <a href="{% url 'order_invoice' order.pk %}" class="btn btn-info w-100 mb-2">
+                    <i class="fas fa-file-invoice"></i> View Invoice
+                </a>
+                <a href="{% url 'order_list' %}" class="btn btn-secondary w-100">
+                    <i class="fas fa-arrow-left"></i> Back to Orders
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}eSewa Payment - XML Cafe System{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+    <div class="esewa-payment-card">
+        <div class="esewa-payment-header">
+            <div class="esewa-brand">
+                <span class="esewa-logo-large">eSewa</span>
+                <span>Payment Gateway</span>
+            </div>
+            <span class="status-badge payment-pending">Pending</span>
+        </div>
+
+        <div class="esewa-payment-body">
+            <p class="eyebrow">Secure checkout</p>
+            <h1>Pay Rs. {{ order.total|floatformat:2 }}</h1>
+            <p class="text-muted">Scan the payment image or use the reference below to complete this eSewa payment.</p>
+
+            <div class="payment-scan-panel">
+                <div class="payment-scan-frame">
+                    <img src="/media/esewa_qr.png" class="payment-qr-image" alt="eSewa QR code">
+                </div>
+            </div>
+
+            <div class="payment-summary">
+                <div>
+                    <span>Order</span>
+                    <strong>{{ order.order_number }}</strong>
+                </div>
+                <div>
+                    <span>Customer</span>
+                    <strong>{{ order.customer_name }}</strong>
+                </div>
+                <div>
+                    <span>Reference</span>
+                    <strong>{{ order.esewa_reference }}</strong>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'order_esewa_success' order.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-esewa w-100">
+                    <i class="fas fa-check-circle"></i> Confirm eSewa Payment
+                </button>
+            </form>
+            <a href="{% url 'order_detail' order.pk %}" class="btn btn-outline-secondary w-100 mt-2">
+                <i class="fas fa-arrow-left"></i> Back to Order
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

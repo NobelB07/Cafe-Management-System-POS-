@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer Section - XML Cafe System{% endblock %}
+
+{% block content %}
+<section class="page-hero welcome-hero">
+    <div>
+        <p class="eyebrow">Customer section</p>
+        <h1>Welcome to XML Cafe</h1>
+        <p class="page-subtitle">Browse the menu, check featured items, and enjoy a simple customer view.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="{% url 'customer_order_create' %}" class="btn btn-primary">
+            <i class="fas fa-bag-shopping"></i> Place Order
+        </a>
+        <a href="{% url 'menu_list' %}" class="btn btn-primary">
+            <i class="fas fa-utensils"></i> View Menu
+        </a>
+    </div>
+</section>
+
+<div class="metric-grid role-metric-grid">
+    <div class="metric-card accent-amber">
+        <span class="metric-icon"><i class="fas fa-user"></i></span>
+        <span class="metric-label">Your Role</span>
+        <strong>Customer</strong>
+        <small>Menu browsing access</small>
+    </div>
+    <div class="metric-card accent-emerald">
+        <span class="metric-icon"><i class="fas fa-mug-hot"></i></span>
+        <span class="metric-label">Membership</span>
+        <strong>{{ profile.get_membership_display }}</strong>
+        <small>{{ profile.points }} reward points, {{ profile.free_coffee_rewards }} free coffee reward{{ profile.free_coffee_rewards|pluralize }}</small>
+    </div>
+</div>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Available now</p>
+            <h2>Featured Menu</h2>
+        </div>
+        <a href="{% url 'menu_list' %}" class="btn btn-outline-primary btn-sm">See All</a>
+    </div>
+
+    <div class="menu-grid">
+        {% for item in menu_items %}
+        <div class="card menu-card">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" class="menu-image" alt="{{ item.name }}">
+            {% endif %}
+            <form method="post" action="{% url 'customer_order_create' %}" class="menu-order-strip">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <input type="hidden" name="menu_item" value="{{ item.pk }}">
+                <input type="hidden" name="notes" value="">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-basket-shopping"></i> Add
+                </button>
+                <label class="menu-order-quantity">
+                    <span>Amount</span>
+                    <input type="number" name="quantity" value="1" min="1" class="form-control" aria-label="Order amount for {{ item.name }}">
+                </label>
+            </form>
+            <div class="card-body">
+                <div class="menu-meta">
+                    <span class="menu-category">{{ item.category|title }}</span>
+                    <span class="menu-price">Rs. {{ item.price|floatformat:2 }}</span>
+                </div>
+                <h5 class="menu-title">{{ item.name }}</h5>
+                <p class="menu-description">{{ item.description }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">No menu items are available right now.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel mt-3">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Your orders</p>
+            <h2>Order Status</h2>
+        </div>
+        <a href="{% url 'customer_order_create' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-plus"></i> New Order
+        </a>
+    </div>
+
+    <div class="customer-order-list">
+        {% for order in customer_orders %}
+        <div class="customer-order-card">
+            <div class="customer-order-main">
+                <div>
+                    <strong>{{ order.order_number }}</strong>
+                    <span>{{ order.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <div class="order-progress" aria-label="Order status">
+                <span class="progress-step {% if order.status == 'pending' or order.status == 'preparing' or order.status == 'completed' %}active{% endif %}">Sent</span>
+                <span class="progress-step {% if order.status == 'preparing' or order.status == 'completed' %}active{% endif %}">Verified</span>
+                <span class="progress-step {% if order.status == 'completed' %}active{% endif %}">Ready</span>
+            </div>
+            <div class="customer-order-items">
+                {% for item in order.items.all %}
+                <span>{{ item.menu_item.name }} x {{ item.quantity }}</span>
+                {% endfor %}
+            </div>
+            <div class="customer-order-footer">
+                <span>Payment: {{ order.get_payment_status_display }}</span>
+                <strong>Rs. {{ order.total|floatformat:2 }}</strong>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">You have not placed an order yet.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="dashboard-grid lower-grid mt-3">
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Review</p>
+                <h2>Share Your Experience</h2>
+            </div>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                {{ review_form.rating.label_tag }}
+                {{ review_form.rating }}
+            </div>
+            <div class="mb-3">
+                {{ review_form.comment.label_tag }}
+                {{ review_form.comment }}
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-star"></i> Submit Review
+            </button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Customer voices</p>
+                <h2>Recent Reviews</h2>
+            </div>
+        </div>
+        <div class="review-list">
+            {% for review in reviews %}
+            <div class="review-item">
+                <strong>{{ review.user.username }}</strong>
+                <span>{{ review.rating }}/5</span>
+                <p>{{ review.comment }}</p>
+            </div>
+            {% empty %}
+            <div class="empty-state">No reviews yet.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

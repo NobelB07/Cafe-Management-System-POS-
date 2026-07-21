@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Menu - XML Cafe System{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Curated menu</p>
+        <h1>Cafe Menu</h1>
+        <p class="page-subtitle">Signature drinks, fresh plates, and dessert favorites ready for quick ordering.</p>
+    </div>
+    {% if is_admin %}
+    <div class="hero-actions">
+        <a href="{% url 'menu_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Menu Item
+        </a>
+    </div>
+    {% endif %}
+</section>
+
+<div class="menu-toolbar">
+    <form method="get" class="d-flex">
+        <select name="category" class="form-select me-2">
+            <option value="">All Categories</option>
+            <option value="beverages" {% if category_filter == 'beverages' %}selected{% endif %}>Beverages</option>
+            <option value="snacks" {% if category_filter == 'snacks' %}selected{% endif %}>Snacks</option>
+            <option value="meals" {% if category_filter == 'meals' %}selected{% endif %}>Meals</option>
+            <option value="desserts" {% if category_filter == 'desserts' %}selected{% endif %}>Desserts</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    <span class="panel-badge">{{ menu_items|length }} menu items</span>
+</div>
+
+<div class="menu-grid">
+    {% for item in menu_items %}
+    <div class="card menu-card">
+        {% if item.image %}
+        <img src="{{ item.image.url }}" class="menu-image" alt="{{ item.name }}">
+        {% else %}
+        <div class="menu-image d-flex align-items-center justify-content-center">
+            <i class="fas fa-utensils fa-3x text-muted"></i>
+        </div>
+        {% endif %}
+        {% if app_role == 'customer' and item.is_available %}
+        <form method="post" action="{% url 'customer_order_create' %}" class="menu-order-strip">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" name="menu_item" value="{{ item.pk }}">
+            <input type="hidden" name="notes" value="">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-basket-shopping"></i> Add
+            </button>
+            <label class="menu-order-quantity">
+                <span>Amount</span>
+                <input type="number" name="quantity" value="1" min="1" class="form-control" aria-label="Order amount for {{ item.name }}">
+            </label>
+        </form>
+        {% endif %}
+        <div class="card-body">
+            <div class="menu-meta">
+                <span class="menu-category">{{ item.category|title }}</span>
+                <span class="menu-price">Rs. {{ item.price|floatformat:2 }}</span>
+            </div>
+            <h5 class="menu-title">{{ item.name }}</h5>
+            {% if item.description %}
+            <p class="menu-description">{{ item.description }}</p>
+            {% else %}
+            <p class="menu-description">Freshly prepared for XML Cafe System guests.</p>
+            {% endif %}
+            <span class="badge {% if item.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                {% if item.is_available %}Available{% else %}Unavailable{% endif %}
+            </span>
+        </div>
+        {% if is_admin %}
+        <div class="card-footer">
+            <div class="btn-group w-100" role="group">
+                <a href="{% url 'menu_edit' item.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <a href="{% url 'menu_delete' item.pk %}" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i> Delete
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <i class="fas fa-info-circle"></i> No menu items found.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

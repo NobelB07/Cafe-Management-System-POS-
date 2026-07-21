@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - XML Cafe System{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Live overview</p>
+        <h1>XML Cafe System</h1>
+        <p class="page-subtitle">A refined command center for orders, revenue, menu flow, and daily cafe decisions.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="{% url 'order_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> New Order
+        </a>
+        <a href="{% url 'menu_list' %}" class="btn btn-light">
+            <i class="fas fa-utensils"></i> Menu
+        </a>
+    </div>
+</section>
+
+<div class="metric-grid">
+    <div class="metric-card accent-amber">
+        <span class="metric-icon"><i class="fas fa-bag-shopping"></i></span>
+        <span class="metric-label">Today's Orders</span>
+        <strong>{{ today_orders_count }}</strong>
+        <small>{{ total_orders }} all-time orders</small>
+    </div>
+    <div class="metric-card accent-emerald">
+        <span class="metric-icon"><i class="fas fa-sack-dollar"></i></span>
+        <span class="metric-label">Today's Revenue</span>
+        <strong>Rs. {{ today_revenue|floatformat:2 }}</strong>
+        <small>Completed orders only</small>
+    </div>
+    <div class="metric-card accent-blue">
+        <span class="metric-icon"><i class="fas fa-clock"></i></span>
+        <span class="metric-label">Pending Orders</span>
+        <strong>{{ pending_orders }}</strong>
+        <small>Needs attention</small>
+    </div>
+    <div class="metric-card accent-rose">
+        <span class="metric-icon"><i class="fas fa-chart-line"></i></span>
+        <span class="metric-label">Avg. Order Value</span>
+        <strong>Rs. {{ avg_order_value|floatformat:2 }}</strong>
+        <small>{{ completed_orders }} completed orders</small>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <section class="panel chart-panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Chart system</p>
+                <h2>Order Status</h2>
+            </div>
+            <span class="panel-badge">Operations</span>
+        </div>
+        <div class="bar-chart">
+            {% for item in status_chart %}
+            <div class="chart-row">
+                <div class="chart-row-label">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.count }}</strong>
+                </div>
+                <div class="chart-track">
+                    <span class="chart-fill status-fill-{{ item.key }}" style="width: {{ item.percent }}%;"></span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel chart-panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Demand mix</p>
+                <h2>Menu Categories</h2>
+            </div>
+            <span class="panel-badge">Sales</span>
+        </div>
+        <div class="bar-chart">
+            {% for item in category_chart %}
+            <div class="chart-row">
+                <div class="chart-row-label">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.count }}</strong>
+                </div>
+                <div class="chart-track">
+                    <span class="chart-fill category-fill-{{ item.key }}" style="width: {{ item.percent }}%;"></span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="dashboard-grid lower-grid">
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Popular picks</p>
+                <h2>Most Ordered Items</h2>
+            </div>
+        </div>
+        {% if most_ordered %}
+        <div class="rank-list">
+            {% for item in most_ordered %}
+            <div class="rank-item">
+                <span class="rank-number">{{ forloop.counter }}</span>
+                <span>{{ item.menu_item__name }}</span>
+                <strong>{{ item.total_quantity }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No orders yet. Create a new order to start building the chart system.</div>
+        {% endif %}
+    </section>
+
+    <section class="panel action-panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">Shortcuts</p>
+                <h2>Quick Actions</h2>
+            </div>
+        </div>
+        <div class="quick-action-grid">
+            <a href="{% url 'order_create' %}" class="quick-action">
+                <i class="fas fa-plus-circle"></i>
+                <span>New Order</span>
+            </a>
+            <a href="{% url 'menu_list' %}" class="quick-action">
+                <i class="fas fa-utensils"></i>
+                <span>View Menu</span>
+            </a>
+            <a href="{% url 'order_list' %}" class="quick-action">
+                <i class="fas fa-receipt"></i>
+                <span>Orders</span>
+            </a>
+            {% if is_admin %}
+            <a href="{% url 'menu_create' %}" class="quick-action">
+                <i class="fas fa-plus"></i>
+                <span>Add Item</span>
+            </a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

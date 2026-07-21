@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Place Order - XML Cafe System{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Customer order</p>
+        <h1>Place an Order</h1>
+        <p class="page-subtitle">Add items to your basket, remove anything you do not want, then send the order to staff.</p>
+    </div>
+</section>
+
+<div class="row">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-plus-circle"></i> Add Item
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <div class="mb-3">
+                        {{ form.menu_item.label_tag }}
+                        {{ form.menu_item }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity.label_tag }}
+                        {{ form.quantity }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-basket-shopping"></i> Add to Basket
+                    </button>
+                    <a href="{% url 'customer_portal' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-basket-shopping"></i> Your Basket
+            </div>
+            <div class="card-body">
+                {% if basket_items %}
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in basket_items %}
+                            <tr>
+                                <td>{{ item.menu_item.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>Rs. {{ item.line_total|floatformat:2 }}</td>
+                                <td>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="remove">
+                                        <input type="hidden" name="menu_item" value="{{ item.menu_item.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="post" class="basket-checkout">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="place_order">
+                    <div class="payment-summary">
+                        <div>
+                            <span>Subtotal</span>
+                            <strong>Rs. {{ basket_subtotal|floatformat:2 }}</strong>
+                        </div>
+                        <div>
+                            <span>Total</span>
+                            <strong>Rs. {{ basket_total|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="basket-notes" class="form-label">Notes</label>
+                        <textarea id="basket-notes" name="notes" class="form-control" rows="2" placeholder="Any special request?">{{ basket_notes }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-paper-plane"></i> Send Basket to Staff
+                    </button>
+                </form>
+                {% else %}
+                <div class="empty-state">Your basket is empty. Add an item to start your order.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

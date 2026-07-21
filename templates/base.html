@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}XML Cafe System{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar no-print">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand brand-lockup" href="{% if app_role == 'customer' %}{% url 'customer_portal' %}{% else %}{% url 'dashboard' %}{% endif %}">
+                <span class="brand-mark"><i class="fas fa-mug-hot"></i></span>
+                <span>
+                    <span class="brand-name">XML Cafe System</span>
+                </span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto nav-pills-soft">
+                    {% if app_role == 'staff' or app_role == 'admin' %}
+                    <li class="nav-item nav-dot-wrap">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        {% if has_unseen_dashboard_notifications %}<span class="notification-dot"></span>{% endif %}
+                    </li>
+                    {% endif %}
+                    <li class="nav-item nav-dot-wrap">
+                        <a class="nav-link" href="{% url 'menu_list' %}">
+                            <i class="fas fa-utensils"></i> Menu
+                        </a>
+                        {% if has_unseen_menu_notifications %}<span class="notification-dot"></span>{% endif %}
+                    </li>
+                    {% if app_role == 'staff' or app_role == 'admin' %}
+                    <li class="nav-item nav-dot-wrap">
+                        <a class="nav-link" href="{% url 'order_list' %}">
+                            <i class="fas fa-receipt"></i> Orders
+                        </a>
+                        {% if has_unseen_order_notifications %}<span class="notification-dot"></span>{% endif %}
+                    </li>
+                    {% endif %}
+                    {% if app_role == 'customer' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'customer_portal' %}">
+                            <i class="fas fa-user"></i> Customer
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link basket-nav-link" href="{% url 'customer_order_create' %}">
+                            <i class="fas fa-basket-shopping"></i>
+                            {% if customer_basket_count %}
+                            Basket ({{ customer_basket_count }})
+                            {% else %}
+                            Basket Empty
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if app_role == 'admin' %}
+                    <li class="nav-item nav-dot-wrap">
+                        <a class="nav-link" href="{% url 'admin_portal' %}">
+                            <i class="fas fa-cog"></i> Admin
+                        </a>
+                        {% if has_unseen_dashboard_notifications %}<span class="notification-dot"></span>{% endif %}
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item user-chip">
+                        <span class="nav-link">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                            <span class="role-chip">{{ app_role|title }}</span>
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link nav-link logout-link">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'signup' %}">
+                            <i class="fas fa-user-plus"></i> Sign Up
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-shell">
+    <div class="container-fluid px-lg-4">
+        {% if messages %}
+        <div class="no-print">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('[data-toggle-password]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = document.querySelector(button.getAttribute('data-toggle-password'));
+                if (!target) return;
+                const isHidden = target.getAttribute('type') === 'password';
+                target.setAttribute('type', isHidden ? 'text' : 'password');
+                button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+                button.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

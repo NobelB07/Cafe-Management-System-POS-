@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Section - XML Cafe System{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Admin section</p>
+        <h1>User Roles & Permissions</h1>
+        <p class="page-subtitle">Manage customer, staff, and admin access from the same polished XML Cafe interface.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/admin/" class="btn btn-light">
+            <i class="fas fa-database"></i> Django Admin
+        </a>
+    </div>
+</section>
+
+<div class="metric-grid">
+    <div class="metric-card accent-rose">
+        <span class="metric-icon"><i class="fas fa-user-shield"></i></span>
+        <span class="metric-label">Admins</span>
+        <strong>{{ role_counts.admin }}</strong>
+        <small>Full access</small>
+    </div>
+    <div class="metric-card accent-blue">
+        <span class="metric-icon"><i class="fas fa-user-tie"></i></span>
+        <span class="metric-label">Staff</span>
+        <strong>{{ role_counts.staff }}</strong>
+        <small>Orders and billing</small>
+    </div>
+    <div class="metric-card accent-emerald">
+        <span class="metric-icon"><i class="fas fa-users"></i></span>
+        <span class="metric-label">Customers</span>
+        <strong>{{ role_counts.customer }}</strong>
+        <small>Menu access</small>
+    </div>
+    <div class="metric-card accent-amber">
+        <span class="metric-icon {% if has_unseen_notifications %}has-dot{% endif %}"><i class="fas fa-bell"></i></span>
+        <span class="metric-label">Notifications</span>
+        <strong>{{ pending_orders|add:unpaid_orders }}</strong>
+        <small>{{ pending_orders }} pending, {{ unpaid_orders }} unpaid, {{ review_count }} reviews</small>
+    </div>
+</div>
+
+<section class="panel mb-3">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Create account</p>
+            <h2>Add User</h2>
+        </div>
+        <span class="panel-badge">Role managed</span>
+    </div>
+
+    <form method="post" action="{% url 'admin_user_create' %}" class="admin-create-form">
+        {% csrf_token %}
+        <div>
+            {{ add_user_form.username.label_tag }}
+            {{ add_user_form.username }}
+        </div>
+        <div>
+            {{ add_user_form.email.label_tag }}
+            {{ add_user_form.email }}
+        </div>
+        <div>
+            {{ add_user_form.password.label_tag }}
+            <div class="password-field">
+                {{ add_user_form.password }}
+                <button type="button" class="btn btn-outline-primary password-toggle" data-toggle-password="#{{ add_user_form.password.id_for_label }}" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        <div>
+            {{ add_user_form.confirm_password.label_tag }}
+            <div class="password-field">
+                {{ add_user_form.confirm_password }}
+                <button type="button" class="btn btn-outline-primary password-toggle" data-toggle-password="#{{ add_user_form.confirm_password.id_for_label }}" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        <div>
+            {{ add_user_form.role.label_tag }}
+            {{ add_user_form.role }}
+        </div>
+        <div>
+            {{ add_user_form.membership.label_tag }}
+            {{ add_user_form.membership }}
+        </div>
+        <label class="active-toggle add-user-active">
+            {{ add_user_form.is_active }}
+            Active
+        </label>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Add User
+        </button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Permission control</p>
+            <h2>User IDs and Roles</h2>
+        </div>
+        <span class="panel-badge">Admin only</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Current Role</th>
+                    <th>Permissions</th>
+                    <th>Membership</th>
+                    <th>Set Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in user_rows %}
+                <tr>
+                    <td><strong>#{{ row.user.id }}</strong></td>
+                    <td>
+                        <strong>{{ row.user.username }}</strong>
+                        {% if row.user.email %}<small class="d-block text-muted">{{ row.user.email }}</small>{% endif %}
+                    </td>
+                    <td><span class="role-pill role-{{ row.role }}">{{ row.role|title }}</span></td>
+                    <td>
+                        {% if row.role == 'admin' %}
+                        Full app access, menu, orders, coupons, users
+                        {% elif row.role == 'staff' %}
+                        Dashboard, orders, billing, payments
+                        {% else %}
+                        Customer section and menu
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="panel-badge">{{ row.profile.get_membership_display }}</span>
+                        <small class="d-block text-muted">{{ row.profile.points }} points, {{ row.profile.free_coffee_rewards }} coffee reward{{ row.profile.free_coffee_rewards|pluralize }}</small>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'user_role_update' row.user.id %}" class="role-form">
+                            {% csrf_token %}
+                            <select name="role" class="form-select form-select-sm">
+                                <option value="customer" {% if row.role == 'customer' %}selected{% endif %}>Customer</option>
+                                <option value="staff" {% if row.role == 'staff' %}selected{% endif %}>Staff</option>
+                                <option value="admin" {% if row.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                            <select name="membership" class="form-select form-select-sm">
+                                <option value="regular" {% if row.profile.membership == 'regular' %}selected{% endif %}>Regular</option>
+                                <option value="silver" {% if row.profile.membership == 'silver' %}selected{% endif %}>Silver</option>
+                                <option value="gold" {% if row.profile.membership == 'gold' %}selected{% endif %}>Gold</option>
+                                <option value="platinum" {% if row.profile.membership == 'platinum' %}selected{% endif %}>Platinum</option>
+                                <option value="diamond" {% if row.profile.membership == 'diamond' %}selected{% endif %}>Diamond</option>
+                            </select>
+                            <label class="active-toggle">
+                                <input type="checkbox" name="is_active" {% if row.user.is_active %}checked{% endif %}>
+                                Active
+                            </label>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                Save
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No users found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel mt-3">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Customer feedback</p>
+            <h2>Reviews</h2>
+        </div>
+        <span class="panel-badge">{{ review_count }} total</span>
+    </div>
+    <div class="review-list">
+        {% for review in reviews %}
+        <div class="review-item">
+            <strong>{{ review.user.username }} <span>{{ review.rating }}/5</span></strong>
+            <p>{{ review.comment }}</p>
+            <small>{{ review.created_at|date:"M d, Y H:i" }}</small>
+        </div>
+        {% empty %}
+        <div class="empty-state">No customer reviews yet.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
