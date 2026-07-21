@@ -44,9 +44,6 @@ A comprehensive Django-based cafe management system with menu management, order 
 ### Setup Instructions
 
 1. **Navigate to the project directory**
-   ```bash
-   cd c:\Users\nobel\OneDrive\Documents\Cafe
-   ```
 
 2. **Create a virtual environment (recommended)**
    ```bash
