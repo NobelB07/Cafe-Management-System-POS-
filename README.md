@@ -233,6 +233,3 @@ Edit the color values in `templates/base.html` and `static/css/style.css`:
 
 This project is provided as-is for educational and commercial use.
 
-## Support
-
-For issues or questions, please refer to Django documentation at https://docs.djangoproject.com/
